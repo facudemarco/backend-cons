@@ -9,13 +9,14 @@ import dotenv
 dotenv.load_dotenv()
 
 SMTP_CONFIG = {
-    "hostname": os.getenv("SMTP_HOSTNAME", "smtp.hostinger.com"),
+    "hostname": os.getenv("SMTP_HOSTNAME", "smtp.gmail.com"),
     "port": int(os.getenv("SMTP_PORT", 465)),
-    "username": os.getenv("SMTP_USERNAME", "info@carlosmartinezconstrucciones.com"),
-    "password": os.getenv("SMTP_PASSWORD", "Iweb.2025"),
-    "from_email": os.getenv("SMTP_FROM_EMAIL", "info@carlosmartinezconstrucciones.com"),
-    "to_email": os.getenv("SMTP_TO_EMAIL", "info@carlosmartinezconstrucciones.com"),
-    "start_tls": True
+    "username": os.getenv("SMTP_USERNAME", "fac.demarco37@gmail.com"),
+    "password": os.getenv("SMTP_PASSWORD", "ifoc prlz usgx mvno"),
+    "from_email": os.getenv("SMTP_FROM_EMAIL", "fac.demarco37@gmail.com"),
+    "to_email": os.getenv("SMTP_TO_EMAIL", "fac.demarco37@gmail.com"),
+    "start_tls": True,
+    "use_tls": False,
 }
 
 router = APIRouter()
