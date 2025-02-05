@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+mysql-connector-python
+mysql
+python-dotenv
+python-multipart
+aiosmtplib
+pydantic[email]
