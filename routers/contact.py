@@ -1,58 +1,41 @@
-from fastapi import APIRouter, status
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, EmailStr, Field
-from email.message import EmailMessage
-import aiosmtplib
-import os
-import dotenv
-
-dotenv.load_dotenv()
-
-SMTP_CONFIG = {
-    "hostname": os.getenv("SMTP_HOSTNAME", "smtp.gmail.com"),
-    "port": int(os.getenv("SMTP_PORT", 465)),
-    "username": os.getenv("SMTP_USERNAME", "fac.demarco37@gmail.com"),
-    "password": os.getenv("SMTP_PASSWORD", "ifoc prlz usgx mvno"),
-    "from_email": os.getenv("SMTP_FROM_EMAIL", "fac.demarco37@gmail.com"),
-    "to_email": os.getenv("SMTP_TO_EMAIL", "fac.demarco37@gmail.com"),
-    "start_tls": True,
-    "use_tls": False,
-}
+from fastapi import FastAPI, HTTPException, Request, APIRouter
+from pydantic import BaseModel
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 router = APIRouter()
 
-class ContactForm(BaseModel):
-    name: str = Field(..., description="Nombre de la persona que envía el mensaje")
-    email: EmailStr = Field(..., description="Correo de la persona que envía el mensaje")
-    telefono: str = Field(..., description="Telefono de la persona que envía el mensaje")
-    m2: str = Field(..., description="Metros cuadrados a construir")
-    message: str = Field(..., description="Mensaje de la persona")
+class FormData(BaseModel):
+    nombre: str
+    email: str
+    telefono: str
+    m2: str
+    mensaje: str
 
-@router.post("/send-email", status_code=status.HTTP_201_CREATED)
-async def send_email(contact: ContactForm):
-    email = EmailMessage()
-    email["From"] = SMTP_CONFIG["from_email"]
-    email["To"] = SMTP_CONFIG["to_email"]
-    telefono = contact.telefono.replace(" ", "")
-    m2 = contact.m2.replace(" ", "")
-    email["Subject"] = f"Mensaje desde la web de: {contact.name}"
-    email.set_content(
-        f"Nombre: {contact.name}\n"
-        f"Email: {contact.email}\n\n"
-        f"Telefono: {telefono}\n\n"
-        f"M2: {m2}\n\n"
-        f"Mensaje:\n{contact.message}"
-    )
+def enviar_email(form_data: FormData):
+    sender_email = "fac.demarco37@gmail.com"
+    sender_password = "ifoc prlz usgx mvno"
+    receiver_email = "fac.demarco37@gmail.com"
+    subject = f"Nuevo mensaje de contacto desde la Web de {form_data.nombre}"
+    body = f"Nombre: {form_data.nombre}\nEmail: {form_data.email}\nTeléfono: {form_data.telefono}\nMetros cuadrados: {form_data.m2}\nMensaje: {form_data.mensaje}"
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = receiver_email
+    msg['Subject'] = subject
+    msg.attach(MIMEText(body, 'plain'))
 
     try:
-        await aiosmtplib.send(
-            email,
-            hostname=SMTP_CONFIG["hostname"],
-            port=SMTP_CONFIG["port"],
-            username=SMTP_CONFIG["username"],
-            password=SMTP_CONFIG["password"],
-            use_tls=True
-        )
-        return JSONResponse(content={"message": "Email enviado con éxito"})
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        print("Correo enviado exitosamente")
     except Exception as e:
-        return JSONResponse(content={"message": f"Error al enviar el correo. Intente más tarde. {e}"}, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"Error al enviar el correo: {e}")
+        raise HTTPException(status_code=500, detail="Error al enviar el correo")
+
+@router.post("/send-email")
+async def send_email(form_data: FormData):
+    enviar_email(form_data)
+    return {"message": "Formulario enviado exitosamente"}
